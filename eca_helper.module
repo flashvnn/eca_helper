@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * @file
+ * ECA helper module file.
+ */
+
+/**
+ * Implements hook_preprocess().
+ */
+function eca_helper_preprocess(&$variables, $hook) {
+  /** @var \Drupal\eca\Event\TriggerEvent $trigger */
+  $trigger = \Drupal::service('eca.trigger_event');
+  $trigger->dispatchFromPlugin('eca_helper_preprocess_hook:preprocess', $hook, $variables);
+}
+
+/**
+ * Implements hook_page_attachments_alter().
+ */
+function eca_helper_page_attachments_alter(array &$attachments) {
+  /** @var \Drupal\eca_helper\Service\PageAttachmentAlter $service */
+  $service = \Drupal::service('eca_helper.page_attachment_alter');
+  $service->alter($attachments, 'header');
+}
+
+/**
+ * Implements hook_page_bottom().
+ */
+function eca_helper_page_bottom(array &$page_bottom) {
+  /** @var \Drupal\eca_helper\Service\PageAttachmentAlter $service */
+  $service = \Drupal::service('eca_helper.page_attachment_alter');
+  $service->alter($page_bottom, 'bottom');
+}
+
+/**
+ * Implements hook_page_top().
+ */
+function eca_helper_page_top(array &$page_top) {
+  /** @var \Drupal\eca_helper\Service\PageAttachmentAlter $service */
+  $service = \Drupal::service('eca_helper.page_attachment_alter');
+  $service->alter($page_top, 'top');
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function eca_helper_preprocess_status_messages(&$variables) {
+  if (empty($variables['message_list'])) {
+    return;
+  }
+
+  $isChanged = FALSE;
+  foreach ($variables['message_list'] as $type => &$messages) {
+    if (!in_array($type, ['status', 'info', 'warning', 'error'])) {
+      continue;
+    }
+    foreach ($messages as $id => $message) {
+      if (!($message instanceof \Stringable)) {
+        continue;
+      }
+      /** @var \Drupal\eca\Event\TriggerEvent $trigger */
+      $trigger = \Drupal::service('eca.trigger_event');
+      /** @var \Drupal\eca_helper\Event\StatusMessagesEvent $event */
+      $msg = (string) $message;
+      $event = $trigger->dispatchFromPlugin('eca_helper:status_messages', $msg, $type);
+      if ($event->isChanged()) {
+        $isChanged = TRUE;
+        $message = $event->getMessage();
+        if (is_null($message) || mb_strlen($message) === 0) {
+          unset($messages[$id]);
+        }
+        else {
+          $messages[$id] = $message;
+        }
+      }
+    }
+  }
+
+  if (!$isChanged) {
+    return;
+  }
+
+  foreach ($variables['message_list'] as $type => &$messages) {
+    if (!in_array($type, ['status', 'info', 'warning', 'error'])) {
+      continue;
+    }
+    if (empty($messages)) {
+      unset($variables['message_list'][$type]);
+    }
+  }
+}

@@ -1,0 +1,15 @@
+services:
+
+  eca_helper.execution.config_subscriber:
+    class: Drupal\eca_helper\EventSubscriber\EcaExecutionPreProcessEventSubscriber
+    parent: eca.execution.subscriber_parent
+    tags:
+      - { name: event_subscriber }
+
+  eca_helper.response_event_subscriber:
+    class: Drupal\eca_helper\EventSubscriber\ResponseSubscriber
+    tags:
+      - { name: event_subscriber }
+
+  eca_helper.page_attachment_alter:
+    class: Drupal\eca_helper\Service\PageAttachmentAlter

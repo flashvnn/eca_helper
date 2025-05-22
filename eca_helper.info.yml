@@ -1,0 +1,8 @@
+name: ECA Helper
+type: module
+description: Add helper functions for ECA module.
+core_version_requirement: ^10.3 || ^11
+package: ECA
+dependencies:
+  - eca:eca (^2)
+  - eca:eca_form

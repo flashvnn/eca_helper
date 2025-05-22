@@ -1,0 +1,15 @@
+{
+  "name": "drupal/eca_helper",
+  "description": "Add helper functions for ECA",
+  "type": "drupal-module",
+  "license": "GPL-2.0+",
+  "homepage": "https://drupal.org/project/eca_helper",
+  "support": {
+    "issues": "https://drupal.org/project/issues/eca_helper",
+    "source": "https://cgit.drupalcode.org/eca_helper"
+  },
+  "require": {
+    "php": ">=8.1",
+    "drupal/eca": "^2.0"
+  }
+}
