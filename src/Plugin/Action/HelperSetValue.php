@@ -61,7 +61,7 @@ trait HelperSetValue {
     if (!in_array('key', $this->hidden)) {
       $form['key'] = [
         '#type' => 'textfield',
-        '#reqruired' => TRUE,
+        '#required' => TRUE,
         '#title' => $this->t('Element key'),
         '#description' => $this->getDescription('key') ?? $this->t('The element key to set value for the form element. Example #title, #attributes.class'),
         '#default_value' => $this->configuration['key'],
@@ -74,7 +74,7 @@ trait HelperSetValue {
       $form['value'] = [
         '#type' => 'textarea',
         '#title' => $this->t('Value'),
-        '#reqruired' => TRUE,
+        '#required' => TRUE,
         '#description' => $this->getDescription('value') ?? $this->t('The element value.'),
         '#default_value' => $this->configuration['value'],
         '#weight' => -48,

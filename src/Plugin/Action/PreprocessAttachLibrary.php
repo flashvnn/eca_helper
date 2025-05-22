@@ -8,7 +8,7 @@ namespace Drupal\eca_helper\Plugin\Action;
  * @Action(
  *   id = "eca_helper_preprocess_attach_library",
  *   label = @Translation("ECA Helper: Preprocess attach library"),
- *   description = @Translation("Attach library with preproces event.")
+ *   description = @Translation("Attach library with preprocess event.")
  * )
  */
 class PreprocessAttachLibrary extends PreprocessSetValue {

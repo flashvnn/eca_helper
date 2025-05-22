@@ -39,7 +39,7 @@ class Dumper extends ConfigurableActionBase {
     $form['data'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Value'),
-      '#reqruired' => TRUE,
+      '#required' => TRUE,
       '#description' => $this->t('The data used for dumping.'),
       '#default_value' => $this->configuration['data'],
       '#eca_token_replacement' => TRUE,

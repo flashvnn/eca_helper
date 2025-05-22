@@ -4,8 +4,10 @@ namespace Drupal\eca_helper\Plugin\Action;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\eca\Plugin\Action\ConfigurableActionBase;
+use Drupal\eca\Service\Token; // Added
 use Drupal\eca\Service\YamlParser;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+// Changed alias to avoid conflict with the property name $container for clarity.
+use Symfony\Component\DependencyInjection\ContainerInterface as SymfonyContainerInterface; // Modified
 use Symfony\Component\Yaml\Exception\ParseException;
 
 /**
@@ -30,6 +32,11 @@ class QuickAction extends ConfigurableActionBase {
   protected array $actions;
 
   /**
+   * The service container.
+   */
+  protected SymfonyContainerInterface $container; // Added property
+
+  /**
    * Set the YAML parser.
    *
    * @param \Drupal\eca\Service\YamlParser $yaml_parser
@@ -42,8 +49,24 @@ class QuickAction extends ConfigurableActionBase {
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
-    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, Token $token_service, SymfonyContainerInterface $container) { // Modified
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $token_service);
+    $this->container = $container;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(SymfonyContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static { // Parameter type changed to alias
+    // Create new static instance with all dependencies for constructor.
+    $instance = new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('eca.service.token'),
+      $container->get('service_container') // Inject the container itself
+    );
+    // YamlParser is used by this class, ensure it's set via its setter.
     $instance->setYamlParser($container->get('eca.service.yaml_parser'));
     return $instance;
   }
@@ -123,12 +146,13 @@ class QuickAction extends ConfigurableActionBase {
       return;
     }
     $callable = $actions[$action]['callback'] ?? NULL;
-    $service = $actions[$action]['service'] ?? NULL;
-    if ($service) {
-      if (!\Drupal::hasService($service)) {
+    $service_name = $actions[$action]['service'] ?? NULL; // Renamed to avoid conflict
+    if ($service_name) {
+      if (!$this->container->has($service_name)) { // MODIFIED
         return;
       }
-      if (!is_callable([\Drupal::service($service), $callable])) {
+      $service_object = $this->container->get($service_name); // MODIFIED, get the actual service object
+      if (!is_callable([$service_object, $callable])) {
         return;
       }
     }
@@ -149,9 +173,9 @@ class QuickAction extends ConfigurableActionBase {
         $args = [$args];
       }
 
-      if ($service) {
+      if ($service_name) {
         $result = call_user_func_array([
-          \Drupal::service($service),
+          $this->container->get($service_name), // MODIFIED
           $callable,
         ], $args);
       }

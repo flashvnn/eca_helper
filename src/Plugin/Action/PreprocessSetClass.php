@@ -8,7 +8,7 @@ namespace Drupal\eca_helper\Plugin\Action;
  * @Action(
  *   id = "eca_helper_preprocess_set_class_value",
  *   label = @Translation("ECA Helper: Preprocess add css class"),
- *   description = @Translation("Set css class with preproces event.")
+ *   description = @Translation("Set css class with preprocess event.")
  * )
  */
 class PreprocessSetClass extends PreprocessSetValue {

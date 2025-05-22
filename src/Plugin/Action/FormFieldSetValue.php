@@ -3,7 +3,10 @@
 namespace Drupal\eca_helper\Plugin\Action;
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface; // Added
 use Drupal\eca_form\Plugin\Action\FormFieldActionBase;
+use Drupal\eca\Service\Token; // Added
+use Drupal\eca\Service\YamlParser; // Added
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -31,10 +34,34 @@ class FormFieldSetValue extends FormFieldActionBase {
   protected bool $useFilters = FALSE;
 
   /**
+   * The logger factory.
+   */
+  protected LoggerChannelFactoryInterface $loggerFactory; // Added
+
+  // The HelperSetValue trait uses $this->yamlParser, so it needs to be a property of this class.
+  // The trait provides setYamlParser().
+  protected YamlParser $yamlParser; // Added because trait uses it
+
+  /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
-    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, Token $token_service, LoggerChannelFactoryInterface $logger_factory) { // Modified
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $token_service);
+    $this->loggerFactory = $logger_factory;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static { // Modified
+    $instance = new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('eca.service.token'),
+      $container->get('logger.factory')
+    );
+    // HelperSetValue trait needs YamlParser. It's set via a public method in the trait.
     $instance->setYamlParser($container->get('eca.service.yaml_parser'));
     return $instance;
   }
@@ -95,7 +122,8 @@ class FormFieldSetValue extends FormFieldActionBase {
           $value = $this->yamlParser->parse($value);
         }
         catch (ParseException $e) {
-          \Drupal::logger('eca')
+          // \Drupal::logger('eca') -> $this->loggerFactory->get('eca') // MODIFIED
+          $this->loggerFactory->get('eca')
             ->error('ECA Helper: Form field set value: Tried parsing value as YAML format, but parsing failed.');
           return;
         }

@@ -3,7 +3,10 @@
 namespace Drupal\eca_helper\Plugin\Action;
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\CurrentRouteMatchInterface; // Added
 use Drupal\eca\Plugin\Action\ConfigurableActionBase;
+use Drupal\eca\Service\Token; // Added
+use Symfony\Component\DependencyInjection\ContainerInterface; // Added
 
 /**
  * Get current route name.
@@ -15,6 +18,32 @@ use Drupal\eca\Plugin\Action\ConfigurableActionBase;
  * )
  */
 class RouteGet extends ConfigurableActionBase {
+
+  /**
+   * The current route match service.
+   */
+  protected CurrentRouteMatchInterface $routeMatch; // Added
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, Token $token_service, CurrentRouteMatchInterface $route_match) { // Modified
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $token_service);
+    $this->routeMatch = $route_match;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static { // Added
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('eca.service.token'),
+      $container->get('current_route_match')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -54,7 +83,8 @@ class RouteGet extends ConfigurableActionBase {
    */
   public function execute() {
     if (!empty($this->configuration['token_name'])) {
-      $this->tokenService->addTokenData($this->configuration['token_name'], \Drupal::routeMatch()
+      // \Drupal::routeMatch() -> $this->routeMatch // MODIFIED
+      $this->tokenService->addTokenData($this->configuration['token_name'], $this->routeMatch
         ->getRouteName());
     }
   }

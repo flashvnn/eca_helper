@@ -2,10 +2,13 @@
 
 namespace Drupal\eca_helper_workflow\Plugin\Action;
 
+use Drupal\content_moderation\ModerationInformationInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\eca\Plugin\Action\ConfigurableActionBase;
 use Drupal\eca\Plugin\DataType\DataTransferObject;
+use Drupal\eca\Service\Token;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Action get workflow label.
@@ -18,6 +21,29 @@ use Drupal\eca\Plugin\DataType\DataTransferObject;
  * )
  */
 class WorkflowLabel extends ConfigurableActionBase {
+
+  /**
+   * The moderation information service.
+   */
+  protected ModerationInformationInterface $moderationInformation;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, Token $token_service, ModerationInformationInterface $moderation_information) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $token_service);
+    $this->moderationInformation = $moderation_information;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    /** @var static $instance */
+    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $instance->moderationInformation = $container->get('content_moderation.moderation_information');
+    return $instance;
+  }
 
   /**
    * {@inheritdoc}
@@ -100,8 +126,7 @@ class WorkflowLabel extends ConfigurableActionBase {
       return;
     }
     $workflow_state = $this->getTokenValue($this->configuration['workflow_state'], TRUE);
-    /** @var \Drupal\content_moderation\ModerationInformation $moderation_information_service */
-    $moderation_information_service = \Drupal::service('content_moderation.moderation_information');
+    $moderation_information_service = $this->moderationInformation;
     $label = '';
     if ($workflow = $moderation_information_service->getWorkflowForEntity($entity)) {
       $label = $workflow->getTypePlugin()->getState($workflow_state)?->label();

@@ -3,7 +3,10 @@
 namespace Drupal\eca_helper\Plugin\Action;
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface; // Added
 use Drupal\eca\Plugin\Action\ConfigurableActionBase;
+use Drupal\eca\Service\Token; // Added
+use Symfony\Component\DependencyInjection\ContainerInterface; // Added
 
 /**
  * Get $_SERVER variables.
@@ -15,6 +18,32 @@ use Drupal\eca\Plugin\Action\ConfigurableActionBase;
  * )
  */
 class ServerVariable extends ConfigurableActionBase {
+
+  /**
+   * The logger factory.
+   */
+  protected LoggerChannelFactoryInterface $loggerFactory; // Added
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, Token $token_service, LoggerChannelFactoryInterface $logger_factory) { // Modified
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $token_service);
+    $this->loggerFactory = $logger_factory;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static { // Added
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('eca.service.token'),
+      $container->get('logger.factory')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -107,7 +136,8 @@ class ServerVariable extends ConfigurableActionBase {
     $variable = $this->configuration['variable'];
     $debug = $this->configuration['debug'];
     if ($debug) {
-      \Drupal::logger('eca_helper')->info('<pre>' . json_encode($server_data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</pre>');
+      // \Drupal::logger('eca_helper') -> $this->loggerFactory->get('eca_helper') // MODIFIED
+      $this->loggerFactory->get('eca_helper')->info('<pre>' . json_encode($server_data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</pre>');
     }
     if ($variable && mb_strlen($variable) > 0) {
       $variable = $this->tokenService->getOrReplace($variable);
